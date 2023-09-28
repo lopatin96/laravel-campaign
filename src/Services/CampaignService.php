@@ -24,13 +24,14 @@ class CampaignService
 
     public function getCampaignUnsubscribedLink(User $user): string
     {
-        return env('APP_URL') . '/campaigns/unsubscribe/' . $click->uuid;
+        return env('APP_URL') . '/campaigns/unsubscribe/' . $this->generateToken($user);
     }
 
     private function generateToken(User $user): string
     {
         $data = json_encode([
             'user_id' => $user->id,
+            'type' => 'campaign',
             'salt' => now(),
         ]);
 
