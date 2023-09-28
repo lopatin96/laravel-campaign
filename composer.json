@@ -1,9 +1,9 @@
 {
-  "name": "lopatin96/laravel-mail",
-  "description": "Laravel mail",
+  "name": "lopatin96/laravel-campaign",
+  "description": "Laravel campaign",
   "autoload": {
     "psr-4": {
-      "Atin\\LaravelMail\\": "src"
+      "Atin\\LaravelCampaign\\": "src"
     }
   },
   "extra": {
