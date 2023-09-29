@@ -41,7 +41,6 @@ return [
 
 ```php
 use Atin\LaravelCampaign\Campaigns\Campaign;
-
 use Illuminate\Database\Eloquent\Collection;
 
 class TestCampaign implements Campaign
