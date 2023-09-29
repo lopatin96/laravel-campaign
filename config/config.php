@@ -2,6 +2,6 @@
 
 return [
     'active_mails' => [
-        '\App\Mail\TestMail'
+        '\App\Mail\TestCampaign' => 'daily',
     ]
 ];
