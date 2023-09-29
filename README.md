@@ -26,15 +26,27 @@ class User extends Authenticatable
 ```
 
 ### Campaigns
-Create ```app/Campaigns``` directory. Create campaign class which implements ```Atin\LaravelCampaign\Campaigns\Campaign```. 
+Create ```app/Campaigns``` directory. Create campaign class which extends ```Atin\LaravelCampaign\Campaigns\Campaign```. 
 Don't forget to add your campaign class to ```laravel-campaign``` config.
+Don't forget to create a mail which extends from ```Atin\LaravelMail\Mail\Mailable```.
+```php
+use Atin\LaravelMail\Mail\Mailable;
+
+class TestMail extends Mailable
+{
+    public function build()
+    {
+         // Build email
+    }
+}
+````
 
 ```php
 <?php
 
 return [
     'active_mails' => [
-        '\App\Mail\TestCampaign' => 'daily',
+        '\App\Campaigns\TestCampaign' => 'daily',
     ]
 ];
 ```
@@ -43,8 +55,10 @@ return [
 use Atin\LaravelCampaign\Campaigns\Campaign;
 use Illuminate\Database\Eloquent\Collection;
 
-class TestCampaign implements Campaign
+class TestCampaign extends Campaign
 {
+    protected string $mailable = '\App\Mail\TestMail';
+    
     public function getRecipients(): Collection
     {
         return \App\Models\User::where('id', '=', 1)->get();
