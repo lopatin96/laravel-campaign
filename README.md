@@ -12,8 +12,8 @@ Publish config to manage active mails:
 php artisan vendor:publish --tag="laravel-campaign-config"
 ```
 
-### Trait
-Add ```HasCampaign``` trait.
+### Trait and Casts
+Add ```HasCampaign``` trait and casts to User model.
 
 ```php
 use Atin\LaravelCampaign\Traits\HasCampaign;
@@ -21,7 +21,10 @@ use Atin\LaravelCampaign\Traits\HasCampaign;
 class User extends Authenticatable
 {
     use HasCampaign;
-    …
+   
+    protected $casts = [
+         'campaign_unsubscribed_at' => 'datetime',
+    ];
 }
 ```
 
