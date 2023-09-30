@@ -13,8 +13,10 @@ abstract class Campaign
     {
         $class = new \ReflectionClass($this->mailable);
 
-        foreach ($this->getRecipients() as $user) {
-            Mail::to($user)->queue($class->newInstanceArgs($user));
+        foreach ($this->getRecipients()->shuffle()->take(config('laravel-campaign.max_emails_per_campaign')) as $user) {
+            if ($email = $user->campaignEmail()) {
+                Mail::to($email)->queue($class->newInstanceArgs([$user]));
+            }
         }
     }
 

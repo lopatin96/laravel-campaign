@@ -5,29 +5,37 @@ namespace Atin\LaravelCampaign\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
 use Atin\LaravelCampaign\Services\CampaignService;
 use App\Models\User;
+use Illuminate\Contracts\Encryption\DecryptException;
+
 
 class CampaignController extends Controller
 {
-    public function __construct(CampaignService $campaignService)
-    {
-        $this->campaignService = $campaignService;
-    }
-
     public function __invoke(string $token)
     {
-        $data = $this->campaignService->decryptToken($token);
-
         if (
-            array_key_exists('user_id', $data)
+            ($data = (new CampaignService)->decryptToken($token))
+            && array_key_exists('user_id', $data)
             && array_key_exists('type', $data)
             && array_key_exists('salt', $data)
             && $data['type'] === 'campaign'
-            && ($user = User::find($data['user_id']))
+            && ($user = User::find($data['user_id'])->firstOrFail())
         ) {
-            // todo: unsubscribed_at
-            abort(404, 'You have unsubscribed from campaign mailings.');
+            if ($user->campaign_unsubscribed_at) {
+                return view('laravel-campaign::campaign.page', [
+                    'title' => __('laravel-campaign::page.already_unsubscribed_title'),
+                    'message' => __('laravel-campaign::page.already_unsubscribed_message'),
+                ]);
+            } else {
+                $user->campaign_unsubscribed_at = now();
+                $user->save();
+
+                return view('laravel-campaign::campaign.page', [
+                    'title' => __('laravel-campaign::page.successful_unsubscribed_title'),
+                    'message' => __('laravel-campaign::page.successful_unsubscribed_message'),
+                ]);
+            }
         }
 
-        abort(404, 'Token is not valid.');
+        abort(404);
     }
 }

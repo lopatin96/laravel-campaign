@@ -89,6 +89,16 @@ class Kernel extends ConsoleKernel
 php artisan vendor:publish --tag="laravel-campaign-config"
 ```
 
+### Views
+```php
+php artisan vendor:publish --tag="laravel-campaign-views"
+```
+
+### Localization
+```php
+php artisan vendor:publish --tag="laravel-campaign-lang"
+```
+
 ### Migrations
 ```php
 php artisan vendor:publish --tag="laravel-campaign-migrations"

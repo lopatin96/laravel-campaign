@@ -3,26 +3,12 @@
 namespace Atin\LaravelCampaign\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class CampaignService
 {
-    public function __construct()
-    {
-        // Store cipher method
-        $this->ciphering = "BF-CBC";
-
-        // Use OpenSSL encryption method
-        $this->iv_length = openssl_cipher_iv_length($this->ciphering);
-        $this->options = 0;
-
-        // Use random_bytes() function to generate a random initialization vector (iv)
-        $this->encryption_iv = random_bytes($this->iv_length);
-
-        // Use php_uname() as the encryption key
-        $this->encryption_key = openssl_digest(php_uname(), 'MD5', TRUE);
-    }
-
-    public function getCampaignUnsubscribedLink(User $user): string
+    public function getCampaignUnsubscribeLink(User $user): string
     {
         return env('APP_URL') . '/campaigns/unsubscribe/' . $this->generateToken($user);
     }
@@ -35,11 +21,15 @@ class CampaignService
             'salt' => now(),
         ]);
 
-        return openssl_encrypt($data, $this->ciphering, $this->encryption_key, $this->options, $this->encryption_iv);
+        return Crypt::encryptString($data);
     }
 
-    public function decryptToken(string $token): array
+    public function decryptToken(string $token): ?array
     {
-        return json_decode(openssl_encrypt($token, $this->ciphering, $this->encryption_key, $this->options, $this->encryption_iv));
+        try {
+            return json_decode(Crypt::decryptString($token), true);
+        } catch (DecryptException $e) {
+            return null;
+        }
     }
 }
