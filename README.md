@@ -28,10 +28,12 @@ class User extends Authenticatable
 }
 ```
 
-### Campaigns
-Create ```app/Campaigns``` directory. Create campaign class which extends ```Atin\LaravelCampaign\Campaigns\Campaign```. 
-Don't forget to add your campaign class to ```laravel-campaign``` config.
-Don't forget to create a mail which extends from ```Atin\LaravelMail\Mail\Mailable```.
+### Generating Mailables
+New "mailable" class will be stored in the *app/Mail* directory.
+```php
+php artisan make:mail TestMail
+```
+
 ```php
 use Atin\LaravelMail\Mail\Mailable;
 
@@ -42,17 +44,10 @@ class TestMail extends Mailable
          // Build email
     }
 }
-````
-
-```php
-<?php
-
-return [
-    'active_mails' => [
-        '\App\Campaigns\TestCampaign' => 'daily',
-    ]
-];
 ```
+
+### Campaigns
+Create ```app/Campaigns``` directory and Campaign class:
 
 ```php
 use Atin\LaravelCampaign\Campaigns\Campaign;
@@ -68,6 +63,18 @@ class TestCampaign extends Campaign
     }
 }
 ```
+
+```php
+<?php
+
+return [
+    'active_mails' => [
+        '\App\Campaigns\TestCampaign' => 'daily',
+    ]
+];
+```
+Don't forget to add your campaign class to ```laravel-campaign``` config.
+
 
 ### Schedule
 Register schedule task in ```app/Concole/Kernel.php```
