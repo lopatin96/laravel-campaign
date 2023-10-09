@@ -18,7 +18,7 @@ class CampaignController extends Controller
             && array_key_exists('type', $data)
             && array_key_exists('salt', $data)
             && $data['type'] === 'campaign'
-            && ($user = User::find($data['user_id'])->firstOrFail())
+            && ($user = User::find($data['user_id']))
         ) {
             if ($user->campaign_unsubscribed_at) {
                 return view('laravel-campaign::campaign.page', [
