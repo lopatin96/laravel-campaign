@@ -20,7 +20,7 @@ abstract class Campaign
         }
     }
 
-    private function send(\ReflectionClass $class, User $user): void
+    private function send(User $user): void
     {
         if ($email = $user->campaignEmail()) {
             Mail::to($email)->queue((new \ReflectionClass($this->mailable))->newInstanceArgs([$user]));
