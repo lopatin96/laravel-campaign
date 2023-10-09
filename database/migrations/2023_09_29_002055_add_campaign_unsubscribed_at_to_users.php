@@ -17,7 +17,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', static function (Blueprint $table) {
-            $table->timestamp(['campaign_unsubscribed_at']);
+            $table->dropColumn('campaign_unsubscribed_at');
         });
     }
 };
