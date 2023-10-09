@@ -16,7 +16,7 @@ abstract class Campaign
 
     protected bool $doNotSendToUnsubscribed = true;
 
-    protected bool $excludeBlockedUsers = true;
+    protected array $sendToUsersWithStatuses = ['active'];
 
     abstract protected function buildQuery(): Builder;
 
@@ -29,7 +29,8 @@ abstract class Campaign
 
     private function getRecipients(): Collection
     {
-        return $this->select('users.*')
+        return $this->buildQuery()
+            ->select('users.*')
             ->when($this->sendOnlyOnce, function ($query) {
                 $query->leftJoin('mail_logs', function($join) {
                     $join->on('users.id', '=', 'mail_logs.user_id')
@@ -40,13 +41,11 @@ abstract class Campaign
             ->when($this->doNotSendToUnsubscribed, function ($query) {
                 $query->whereNull('campaign_unsubscribed_at');
             })
-            ->when($this->excludeBlockedUsers, function ($query) {
-                $query->whereNotIn('users.status', ['blocked']);
-            })
-            ->shuffle()
-            ->take(config('laravel-campaign.max_emails_per_campaign'))
-            ->distinct()
-            ->get();
+                ->whereIn('users.status', $this->sendToUsersWithStatuses)
+                ->distinct()
+                ->get()
+                ->shuffle()
+                ->take(config('laravel-campaign.max_emails_per_campaign'));
     }
 
     private function send(User $user): void
