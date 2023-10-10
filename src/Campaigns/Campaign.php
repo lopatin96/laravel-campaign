@@ -2,6 +2,7 @@
 
 namespace Atin\LaravelCampaign\Campaigns;
 
+use Atin\LaravelCampaign\Enums\SubscriptionStatus;
 use Atin\LaravelMail\Models\MailLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Mail;
@@ -16,7 +17,7 @@ abstract class Campaign
 
     protected bool $doNotSendToUnsubscribedFromCampaigns = true;
 
-    protected ?string $subscribed = null; // null = all users; 'active', 'canceled', 'canceled-or-never-paid', 'never-paid'
+    protected SubscriptionStatus $subscriptionStatus = SubscriptionStatus::Any;
 
     protected array $sendToUsersWithStatuses = ['active'];
 
@@ -43,13 +44,25 @@ abstract class Campaign
             ->when($this->doNotSendToUnsubscribedFromCampaigns, function ($query) {
                 $query->whereNull('campaign_unsubscribed_at');
             })
-            ->when(in_array($this->subscribed, ['active', 'canceled']), function ($query) {
+            ->when($this->subscriptionStatus === SubscriptionStatus::Active, function ($query) {
                 $query->leftJoin('subscriptions', function($join) {
                     $join->on('users.id', '=', 'subscriptions.user_id');
                 })
-                    ->where('subscriptions.stripe_status', '=', $this->subscribed);
+                    ->where('subscriptions.stripe_status', '=', 'active');
             })
-            ->when($this->subscribed === 'canceled-or-never-paid', function ($query) {
+            ->when($this->subscriptionStatus === SubscriptionStatus::Canceled, function ($query) {
+                $query->leftJoin('subscriptions', function($join) {
+                    $join->on('users.id', '=', 'subscriptions.user_id');
+                })
+                    ->where('subscriptions.stripe_status', '=', 'canceled');
+            })
+            ->when($this->subscriptionStatus === SubscriptionStatus::NeverPaid, function ($query) {
+                $query->leftJoin('subscriptions', function($join) {
+                    $join->on('users.id', '=', 'subscriptions.user_id');
+                })
+                    ->whereNull('subscriptions.stripe_status');
+            })
+            ->when($this->subscriptionStatus === SubscriptionStatus::CanceledOrNeverPaid, function ($query) {
                 $query->leftJoin('subscriptions', function($join) {
                     $join->on('users.id', '=', 'subscriptions.user_id');
                 })
@@ -58,11 +71,13 @@ abstract class Campaign
                             ->orWhereNull('subscriptions.stripe_status');
                     });
             })
-            ->when($this->subscribed === 'never-paid', function ($query) {
+            ->when($this->subscriptionStatus === SubscriptionStatus::EverPaid, function ($query) {
                 $query->leftJoin('subscriptions', function($join) {
                     $join->on('users.id', '=', 'subscriptions.user_id');
                 })
-                    ->whereNull('subscriptions.stripe_status');
+                    ->where(function($query) {
+                        $query->whereNotNull('subscriptions.stripe_status');
+                    });
             })
             ->whereIn('users.status', $this->sendToUsersWithStatuses)
             ->distinct()
