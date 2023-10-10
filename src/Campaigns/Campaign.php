@@ -14,7 +14,9 @@ abstract class Campaign
 
     protected bool $sendOnlyOnce = true;
 
-    protected bool $doNotSendToUnsubscribed = true;
+    protected bool $doNotSendToUnsubscribedFromCampaigns = true;
+
+    protected ?bool $subscribed = null;
 
     protected array $sendToUsersWithStatuses = ['active'];
 
@@ -38,14 +40,20 @@ abstract class Campaign
                 })
                     ->whereNull('mail_logs.user_id');
             })
-            ->when($this->doNotSendToUnsubscribed, function ($query) {
+            ->when($this->doNotSendToUnsubscribedFromCampaigns, function ($query) {
                 $query->whereNull('campaign_unsubscribed_at');
             })
-                ->whereIn('users.status', $this->sendToUsersWithStatuses)
-                ->distinct()
-                ->get()
-                ->shuffle()
-                ->take(config('laravel-campaign.max_emails_per_campaign'));
+            ->when(! is_null($this->subscribed), function ($query) {
+                $query->leftJoin('subscriptions', function($join) {
+                    $join->on('users.id', '=', 'subscriptions.user_id');
+                })
+                    ->whereIn('subscriptions.stripe_status', $this->subscribed ? ['active', 'past_due'] : ['canceled']);
+            })
+            ->whereIn('users.status', $this->sendToUsersWithStatuses)
+            ->distinct()
+            ->get()
+            ->shuffle()
+            ->take(config('laravel-campaign.max_emails_per_campaign'));
     }
 
     private function send(User $user): void
