@@ -52,14 +52,18 @@ Create ```app/Campaigns``` directory and Campaign class:
 ```php
 use Atin\LaravelCampaign\Campaigns\Campaign;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 
 class TestCampaign extends Campaign
 {
     protected string $mailable = '\App\Mail\TestMail';
     
-    public function getRecipients(): Collection
+    protected function buildQuery(): Builder
     {
-        return \App\Models\User::where('id', '=', 1)->get();
+         return \App\Models\User::where(function($query) {
+            $query->whereDate('users.trial_ends_at', '>=', now())
+                ->whereDate('users.trial_ends_at', '<', now()->addDay());
+        });
     }
 }
 ```
