@@ -16,7 +16,7 @@ abstract class Campaign
 
     protected bool $doNotSendToUnsubscribedFromCampaigns = true;
 
-    protected ?bool $subscribed = null;
+    protected ?string $subscribed = null; // null = all users; 'active', 'canceled', 'canceled-or-never-paid', 'never-paid'
 
     protected array $sendToUsersWithStatuses = ['active'];
 
@@ -43,18 +43,26 @@ abstract class Campaign
             ->when($this->doNotSendToUnsubscribedFromCampaigns, function ($query) {
                 $query->whereNull('campaign_unsubscribed_at');
             })
-            ->when($this->subscribed, function ($query) {
+            ->when(in_array($this->subscribed, ['active', 'canceled']), function ($query) {
                 $query->leftJoin('subscriptions', function($join) {
                     $join->on('users.id', '=', 'subscriptions.user_id');
                 })
-                    ->whereIn('subscriptions.stripe_status', ['active', 'past_due']);
+                    ->where('subscriptions.stripe_status', '=', $this->subscribed);
             })
-            ->when($this->subscribed === false, function ($query) {
+            ->when($this->subscribed === 'canceled-or-never-paid', function ($query) {
                 $query->leftJoin('subscriptions', function($join) {
                     $join->on('users.id', '=', 'subscriptions.user_id');
                 })
-                    ->whereIn('subscriptions.stripe_status', ['canceled'])
-                    ->orWhereNull('subscriptions.stripe_status');
+                    ->where(function($query) {
+                        $query->where('subscriptions.stripe_status', '=', 'canceled')
+                            ->orWhereNull('subscriptions.stripe_status');
+                    });
+            })
+            ->when($this->subscribed === 'never-paid', function ($query) {
+                $query->leftJoin('subscriptions', function($join) {
+                    $join->on('users.id', '=', 'subscriptions.user_id');
+                })
+                    ->whereNull('subscriptions.stripe_status');
             })
             ->whereIn('users.status', $this->sendToUsersWithStatuses)
             ->distinct()
