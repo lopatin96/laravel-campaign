@@ -43,11 +43,18 @@ abstract class Campaign
             ->when($this->doNotSendToUnsubscribedFromCampaigns, function ($query) {
                 $query->whereNull('campaign_unsubscribed_at');
             })
-            ->when(! is_null($this->subscribed), function ($query) {
+            ->when($this->subscribed, function ($query) {
                 $query->leftJoin('subscriptions', function($join) {
                     $join->on('users.id', '=', 'subscriptions.user_id');
                 })
-                    ->whereIn('subscriptions.stripe_status', $this->subscribed ? ['active', 'past_due'] : ['canceled']);
+                    ->whereIn('subscriptions.stripe_status', ['active', 'past_due']);
+            })
+            ->when($this->subscribed === false, function ($query) {
+                $query->leftJoin('subscriptions', function($join) {
+                    $join->on('users.id', '=', 'subscriptions.user_id');
+                })
+                    ->whereIn('subscriptions.stripe_status', ['canceled'])
+                    ->orWhereNull('subscriptions.stripe_status');
             })
             ->whereIn('users.status', $this->sendToUsersWithStatuses)
             ->distinct()
