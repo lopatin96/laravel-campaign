@@ -88,8 +88,8 @@ abstract class Campaign
 
     private function send(User $user): void
     {
-        if ($email = $user->campaignEmail()) {
-            Mail::to($email)->queue((new \ReflectionClass($this->mailable))->newInstanceArgs([$user]));
+        if ($user->campaignEmail()) {
+            Mail::to($user)->queue((new \ReflectionClass($this->mailable))->newInstanceArgs([$user]));
 
             MailLog::create([
                 'user_id' => $user->id,
